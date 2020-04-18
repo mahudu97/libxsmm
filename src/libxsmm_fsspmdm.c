@@ -107,12 +107,14 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       0, ldb, ldc, alpha, beta, flags, prefetch);
 
     if (0 != xgemm_desc) {
+      printf("JIT succesfull\n");
       new_handle->kernel = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
   }
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
+    printf("JIT succesfull 2\n");
   /* nothing to do */
   /* attempt to JIT dense kernel as sparse_reg failed */
   } else {

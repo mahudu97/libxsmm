@@ -1611,6 +1611,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             uid);
         }
       }
+      printf("KIND_SREG\n");
     } break;
     case LIBXSMM_BUILD_KIND_MCOPY: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.mcopy);
