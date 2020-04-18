@@ -1731,7 +1731,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
   }
 
-  if  (0 == generated_code.last_error /* no error raised */
+   printf("last error %d\n", generated_code.last_error);
+   printf("code size %d\n", generated_code.code_size);
+   if  (0 == generated_code.last_error /* no error raised */
     && 0 != generated_code.code_size /*check (tcopy issue?)*/)
   {
     char* code_buffer = NULL;
@@ -1762,8 +1764,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         libxsmm_xfree(code_buffer, 0/*no check*/);
       }
     }
+    else { printf("code malloc failed\n"); }
   }
   else {
+    printf("gen code error raised\n");
     result = (0 != generated_code.last_error ? generated_code.last_error : EXIT_FAILURE);
   }
 # if !defined(NDEBUG)

@@ -122,6 +122,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
                                               const double*                  i_values ) {
   /* A matrix is sparse */
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
+    printf("A is sparse\n");
     /* check LDB */
     if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
@@ -133,6 +134,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
       return;
     }
     libxsmm_generator_spgemm_csr_asparse_reg( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+    printf("called the asparse_reg\n");
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
@@ -150,6 +152,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
     exit(-1);
   } else {
     /* something bad happened... */
+    printf("big bad happend\n");
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
     return;
   }

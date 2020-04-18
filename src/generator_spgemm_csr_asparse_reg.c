@@ -187,6 +187,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* inner chunk size */
   if ( i_xgemm_desc->n != l_micro_kernel_config.vector_length ) {
     free(l_unique_values); free(l_unique_pos);
+    printf("chunk size check failed\n");
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
@@ -340,6 +341,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 #endif
 
   /* close asm */
+  printf("closed asm stream\n");
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   free(l_unique_values);

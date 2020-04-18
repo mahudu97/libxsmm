@@ -118,6 +118,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   /* nothing to do */
   /* attempt to JIT dense kernel as sparse_reg failed */
   } else {
+    printf("dense\n");
     new_handle->N_chunksize = 16;
     new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
     /* copy A over */
