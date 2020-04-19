@@ -1783,6 +1783,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     }
   }
   else {
+    if (generated_code.last_error == LIBXSMM_ERR_BUFFER_TOO_SMALL) {
+      printf("Buffer too small\n");
+      exit(LIBXSMM_ERR_BUFFER_TOO_SMALL);
+    }
     result = (0 != generated_code.last_error ? generated_code.last_error : EXIT_FAILURE);
   }
 # if !defined(NDEBUG)
