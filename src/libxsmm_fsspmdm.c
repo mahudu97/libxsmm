@@ -105,47 +105,48 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     flags |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }
 
-  if (0 != a_csr_values && 0 != a_csr_rowptr && 0 != a_csr_colidx) {
-    int n = 0;
-    /* populate CSR structure */
-    for (i = 0; i < M; i++) {
-      a_csr_rowptr[i] = n;
-      for (j = 0; j < K; j++) {
-        if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
-          a_csr_values[n] = a_dense[(i*lda) + j];
-          a_csr_colidx[n] = j;
-          n++;
-        }
-      }
-    }
-    a_csr_rowptr[M] = a_nnz;
+  // if (0 != a_csr_values && 0 != a_csr_rowptr && 0 != a_csr_colidx) {
+  //   int n = 0;
+  //   /* populate CSR structure */
+  //   for (i = 0; i < M; i++) {
+  //     a_csr_rowptr[i] = n;
+  //     for (j = 0; j < K; j++) {
+  //       if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
+  //         a_csr_values[n] = a_dense[(i*lda) + j];
+  //         a_csr_colidx[n] = j;
+  //         n++;
+  //       }
+  //     }
+  //   }
+  //   a_csr_rowptr[M] = a_nnz;
 
-    /* attempt to JIT a sparse_reg */
-    new_handle->N_chunksize = 8;
+  //   /* attempt to JIT a sparse_reg */
+  //   new_handle->N_chunksize = 8;
 
-    xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, new_handle->N_chunksize, K,
-      0, ldb, ldc, alpha, beta, flags, prefetch);
+  //   xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, new_handle->N_chunksize, K,
+  //     0, ldb, ldc, alpha, beta, flags, prefetch);
 
-    if (0 != xgemm_desc) {
-      new_handle->kernel = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  //   if (0 != xgemm_desc) {
+  //     new_handle->kernel = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  //   }
+  // }
+
+  // /* continue with sparse A */
+  // if (new_handle->kernel != 0) {
+  // /* nothing to do */
+  // /* attempt to JIT dense kernel as sparse_reg failed */
+  // } else {
+
+  new_handle->N_chunksize = 16;
+  new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
+  /* copy A over */
+  new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
+  for ( i = 0; i < M; ++i ) {
+    for ( j = 0; j < K; ++j ) {
+      new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
     }
   }
-
-  /* continue with sparse A */
-  if (new_handle->kernel != 0) {
-  /* nothing to do */
-  /* attempt to JIT dense kernel as sparse_reg failed */
-  } else {
-    new_handle->N_chunksize = 16;
-    new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
-    /* copy A over */
-    new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
-    for ( i = 0; i < M; ++i ) {
-      for ( j = 0; j < K; ++j ) {
-        new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
-      }
-    }
-  }
+  //}
 
   /* free CSR */
   free( a_csr_values );
