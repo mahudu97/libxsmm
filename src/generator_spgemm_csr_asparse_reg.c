@@ -44,6 +44,11 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define LN_BLOCKING 2
+#define ACC_REG 30
+#define MAX_UNIQUE_DP 30
+#define MAX_UNIQUE_SP 30
+
 LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*        io_generated_code,
                                                const char*                    i_routine_name,
@@ -89,7 +94,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_row_elements;
   unsigned int l_unique;
   unsigned int l_hit;
-  unsigned int l_n_blocking = 1;
+  unsigned int l_n_blocking = LN_BLOCKING;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
@@ -156,8 +161,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     }
   }
 
-  /* check that we have enough registers (N=20) for now */
-  if ( l_unique > 31 ) {
+  /* check that we have enough registers for the datatype */
+  if ( (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && l_unique > MAX_UNIQUE_DP) ||
+       (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && l_unique > MAX_UNIQUE_SP) ) {
     free(l_unique_values); free(l_unique_pos);
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     return;
@@ -252,15 +258,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                             l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
                                               l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
                                             l_micro_kernel_config.vector_name,
-                                            l_unique+l_n, 0, 1, 0 );
+                                            ACC_REG+l_n, 0, 1, 0 );
         } else {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    l_micro_kernel_config.instruction_set,
                                                    l_micro_kernel_config.vxor_instruction,
                                                    l_micro_kernel_config.vector_name,
-                                                   l_unique+l_n,
-                                                   l_unique+l_n,
-                                                   l_unique+l_n );
+                                                   ACC_REG+l_n,
+                                                   ACC_REG+l_n,
+                                                   ACC_REG+l_n );
         }
 
         /* only prefetch if we do temporal stores */
@@ -279,6 +285,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
       for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         const unsigned int u = i_row_idx[l_m] + l_z;
         LIBXSMM_ASSERT(u < l_n_row_idx);
+
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                  l_micro_kernel_config.instruction_set,
                                                  l_micro_kernel_config.vmul_instruction,
@@ -290,7 +297,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                    l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
                                                  l_micro_kernel_config.vector_name,
                                                  l_unique_pos[u],
-                                                 l_unique+l_n );
+                                                 ACC_REG+l_n );
 
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             LIBXSMM_X86_INSTR_PREFETCHT2,
@@ -321,7 +328,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                           l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
                                             l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
                                           l_micro_kernel_config.vector_name,
-                                          l_unique+l_n, 0, 0, 1 );
+                                          ACC_REG+l_n, 0, 0, 1 );
       }
     }
   }
