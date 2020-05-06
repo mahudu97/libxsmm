@@ -37,9 +37,7 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
+#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -59,6 +57,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_dfsspmdm* new_handle = 0;
+  unsigned int ii, jj;
   int i, j, a_nnz;
 
   /* some checks... */
@@ -133,16 +132,16 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
-  /* nothing to do */
-  /* attempt to JIT dense kernel as sparse_reg failed */
-  } else {
-    new_handle->N_chunksize = 16;
-    new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
-    /* copy A over */
-    new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
-    for ( i = 0; i < M; ++i ) {
-      for ( j = 0; j < K; ++j ) {
-        new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
+    /* load permute operands */
+    new_handle->a_dense = (unsigned int*)libxsmm_aligned_malloc(8*16*sizeof(unsigned int), 64);
+    for ( ii = 0; ii < 8; ii++) {
+      jj = 0;
+      /* repeat pattern to select 64-bits using vpermd */
+      while (jj<16) {
+        new_handle->a_dense[ii*16+(jj)] = ii*2;
+        jj++;
+        new_handle->a_dense[ii*16+(jj)] = ii*2 + 1;
+        jj++;
       }
     }
   }
@@ -170,6 +169,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_sfsspmdm* new_handle = 0;
+  unsigned int ii, jj;
   int i, j, a_nnz;
 
   /* some checks... */
@@ -244,16 +244,14 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
-  /* nothing to do */
-  /* attempt to JIT dense kernel as sparse_reg failed */
-  } else {
-    new_handle->N_chunksize = 16;
-    new_handle->kernel = libxsmm_smmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
-    /* copy A over */
-    new_handle->a_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), 64);
-    for ( i = 0; i < M; ++i ) {
-      for ( j = 0; j < K; ++j ) {
-        new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
+    /* load permute operands */
+    new_handle->a_dense = (unsigned int*)libxsmm_aligned_malloc(16*16*sizeof(unsigned int), 64);
+    for ( ii = 0; ii < 16; ii++) {
+      jj = 0;
+      /* repeat pattern to select 64-bits using vpermd */
+      while (jj<16) {
+        new_handle->a_dense[ii*16+jj] = ii;
+        jj++;
       }
     }
   }
@@ -272,15 +270,15 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
   int i;
   assert( handle != 0 );
 
-  if ( handle->a_dense == 0 ) {
+  // if ( handle->a_dense == 0 ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( handle->a_dense, B+i, C+i );
+      handle->kernel( (double*)handle->a_dense, B+i, C+i );
     }
-  } else {
-    for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( B+i, handle->a_dense, C+i );
-    }
-  }
+  // } else {
+  //   for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
+  //     handle->kernel( B+i, handle->a_dense, C+i );
+  //   }
+  // }
 }
 
 
@@ -289,15 +287,15 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
   int i;
   assert( handle != 0 );
 
-  if ( handle->a_dense == 0 ) {
+  // if ( handle->a_dense == 0 ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( handle->a_dense, B+i, C+i );
+      handle->kernel( (float*)handle->a_dense, B+i, C+i );
     }
-  } else {
-    for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( B+i, handle->a_dense, C+i );
-    }
-  }
+  // } else {
+  //   for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
+  //     handle->kernel( B+i, handle->a_dense, C+i );
+  //   }
+  // }
 }
 
 
