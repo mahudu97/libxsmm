@@ -240,10 +240,12 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
   assert( handle != 0 );
 
   if ( handle->a_dense == 0 ) {
+    printf("a_dense false\n");
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
       handle->kernel( handle->a_dense, B+i, C+i );
     }
   } else {
+    printf("a_dense true\n");
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
       handle->kernel( B+i, handle->a_dense, C+i );
     }
