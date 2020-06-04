@@ -92,6 +92,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_mm;
   unsigned int l_n;
   unsigned int l_z;
+  unsigned int largest_lz;
   unsigned int l_row_elements[LM_BLOCKING];
   unsigned int l_unique;
   unsigned int l_hit;
@@ -245,11 +246,13 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
 #endif
 
-  for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m+=2 ) {
+  for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m+=LM_BLOCKING ) {
+    largest_lz = 0;
     for ( l_mm=l_m; l_mm < l_m+LM_BLOCKING; l_mm++) {
       if ( l_mm < (unsigned int)i_xgemm_desc->m ) {
         l_row_elements[l_mm-l_m] = i_row_idx[l_mm+1] - i_row_idx[l_mm];
         if (l_row_elements[l_mm-l_m] > 0) {
+          largest_lz = (l_row_elements[l_mm-l_m] > largest_lz) ? l_row_elements[l_mm-l_m] : largest_lz;
           for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
             /* load C or reset to 0 depending on beta */
             if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
@@ -285,7 +288,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
         }
       }
     }
-    for ( l_z = 0; l_z < (l_row_elements[0] > l_row_elements[1] ? l_row_elements[0] : l_row_elements[1]); l_z++ ) {
+    for ( l_z = 0; l_z < largest_lz; l_z++ ) {
       for ( l_mm=l_m; l_mm < l_m+LM_BLOCKING; l_mm++) {
         if ( (l_mm < (unsigned int)i_xgemm_desc->m) && (l_z < l_row_elements[l_mm-l_m]) ) {
           /* check k such that we just use columns which actually need to be multiplied */
