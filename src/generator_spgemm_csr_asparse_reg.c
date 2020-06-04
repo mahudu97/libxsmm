@@ -271,15 +271,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                 l_mm*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
                                                   l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
                                                 l_micro_kernel_config.vector_name,
-                                                ACC_REG+l_n+(l_mm-l_m), 0, 1, 0 );
+                                                ACC_REG+(l_n*LM_BLOCKING)+(l_mm-l_m), 0, 1, 0 );
             } else {
               libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                       l_micro_kernel_config.instruction_set,
                                                       l_micro_kernel_config.vxor_instruction,
                                                       l_micro_kernel_config.vector_name,
-                                                      ACC_REG+l_n+(l_mm-l_m),
-                                                      ACC_REG+l_n+(l_mm-l_m),
-                                                      ACC_REG+l_n+(l_mm-l_m) );
+                                                      ACC_REG+(l_n*LM_BLOCKING)+(l_mm-l_m),
+                                                      ACC_REG+(l_n*LM_BLOCKING)+(l_mm-l_m),
+                                                      ACC_REG+(l_n*LM_BLOCKING)+(l_mm-l_m) );
             }
 
             /* only prefetch if we do temporal stores */
@@ -311,15 +311,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                                                 (l_unique_pos[u] % 8)*64,
                                                 l_micro_kernel_config.vector_name,
-                                                BCAST_REG+l_n+(l_mm-l_m), 0, 1, 0 );
+                                                BCAST_REG+(l_n*LM_BLOCKING)+(l_mm-l_m), 0, 1, 0 );
 
               libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
                                                       l_micro_kernel_config.instruction_set,
                                                       LIBXSMM_X86_INSTR_VPERMD,
                                                       l_micro_kernel_config.vector_name,
                                                       l_unique_pos[u] / 8,
-                                                      BCAST_REG+l_n+(l_mm-l_m),
-                                                      BCAST_REG+l_n+(l_mm-l_m));
+                                                      BCAST_REG+(l_n*LM_BLOCKING)+(l_mm-l_m),
+                                                      BCAST_REG+(l_n*LM_BLOCKING)+(l_mm-l_m));
             } else {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 l_micro_kernel_config.instruction_set,
@@ -328,15 +328,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                                                 (l_unique_pos[u] % 16)*64,
                                                 l_micro_kernel_config.vector_name,
-                                                BCAST_REG+l_n+(l_mm-l_m), 0, 1, 0 );
+                                                BCAST_REG+(l_n*LM_BLOCKING)+(l_mm-l_m), 0, 1, 0 );
 
               libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
                                                       l_micro_kernel_config.instruction_set,
                                                       LIBXSMM_X86_INSTR_VPERMD,
                                                       l_micro_kernel_config.vector_name,
                                                       l_unique_pos[u] / 16,
-                                                      BCAST_REG+l_n+(l_mm-l_m),
-                                                      BCAST_REG+l_n+(l_mm-l_m));
+                                                      BCAST_REG+(l_n*LM_BLOCKING)+(l_mm-l_m),
+                                                      BCAST_REG+(l_n*LM_BLOCKING)+(l_mm-l_m));
             }
 
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
@@ -349,8 +349,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                     i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size +
                                                       l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
                                                     l_micro_kernel_config.vector_name,
-                                                    BCAST_REG+l_n+(l_mm-l_m),
-                                                    ACC_REG+l_n+(l_mm-l_m) );
+                                                    BCAST_REG+(l_n*LM_BLOCKING)+(l_mm-l_m),
+                                                    ACC_REG+(l_n*LM_BLOCKING)+(l_mm-l_m) );
 
             libxsmm_x86_instruction_prefetch( io_generated_code,
                                               LIBXSMM_X86_INSTR_PREFETCHT2,
@@ -385,7 +385,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                               l_mm*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
                                                 l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
                                               l_micro_kernel_config.vector_name,
-                                              ACC_REG+l_n+(l_mm-l_m), 0, 0, 1 );
+                                              ACC_REG+(l_n*LM_BLOCKING)+(l_mm-l_m), 0, 0, 1 );
           }
         }
       }
