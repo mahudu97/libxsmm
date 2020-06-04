@@ -271,7 +271,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
   assert( handle != 0 );
 
   // if ( handle->a_dense == 0 ) {
-    for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
+    for ( i = 0; i < handle->N; i+=3*handle->N_chunksize ) {
       handle->kernel( (double*)handle->a_dense, B+i, C+i );
     }
   // } else {
@@ -288,7 +288,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
   assert( handle != 0 );
 
   // if ( handle->a_dense == 0 ) {
-    for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
+    for ( i = 0; i < handle->N; i+=3*handle->N_chunksize ) {
       handle->kernel( (float*)handle->a_dense, B+i, C+i );
     }
   // } else {

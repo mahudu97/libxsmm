@@ -44,10 +44,10 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define BCAST_REG 30
-#define ACC_REG 31
-#define MAX_UNIQUE_DP 240
-#define MAX_UNIQUE_SP 480
+#define BCAST_REG 26
+#define ACC_REG 29
+#define MAX_UNIQUE_DP 208
+#define MAX_UNIQUE_SP 416
 
 LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*        io_generated_code,
@@ -95,7 +95,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_unique;
   unsigned int l_reg_num;
   unsigned int l_hit;
-  unsigned int l_n_blocking = 1;
+  unsigned int l_n_blocking = 3;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
@@ -299,15 +299,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             (l_unique_pos[u] % 8)*64,
                                             l_micro_kernel_config.vector_name,
-                                            BCAST_REG, 0, 1, 0 );
+                                            BCAST_REG+l_n, 0, 1, 0 );
 
           libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
                                                   l_micro_kernel_config.instruction_set,
                                                   LIBXSMM_X86_INSTR_VPERMD,
                                                   l_micro_kernel_config.vector_name,
                                                   l_unique_pos[u] / 8,
-                                                  BCAST_REG,
-                                                  BCAST_REG);
+                                                  BCAST_REG+l_n,
+                                                  BCAST_REG+l_n);
         } else {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             l_micro_kernel_config.instruction_set,
@@ -316,15 +316,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             (l_unique_pos[u] % 16)*64,
                                             l_micro_kernel_config.vector_name,
-                                            BCAST_REG, 0, 1, 0 );
+                                            BCAST_REG+l_n, 0, 1, 0 );
 
           libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
                                                   l_micro_kernel_config.instruction_set,
                                                   LIBXSMM_X86_INSTR_VPERMD,
                                                   l_micro_kernel_config.vector_name,
                                                   l_unique_pos[u] / 16,
-                                                  BCAST_REG,
-                                                  BCAST_REG);
+                                                  BCAST_REG+l_n,
+                                                  BCAST_REG+l_n);
         }
 
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
@@ -337,7 +337,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                  i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size +
                                                    l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
                                                  l_micro_kernel_config.vector_name,
-                                                 BCAST_REG,
+                                                 BCAST_REG+l_n,
                                                  ACC_REG+l_n );
 
           libxsmm_x86_instruction_prefetch( io_generated_code,
